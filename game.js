@@ -11,11 +11,84 @@ define('game', [
     userInput,
     map1
 ) {
-    world = null
+    class GameObject {
+        constructor(world, body) {
+            this.world = world;
+            this.body = body;
+            this.markedForRemoval = false;
+        }
+        tick() {}
+        draw() {}
+        removeIfApplicable() {
+            if (this.markedForRemoval) this.world.DestroyBody(this.body);
+        }
+    }
 
+    class Player extends GameObject {
+        constructor(world, body, id, color) {
+            super(world, body);
+            this.id = id;
+            this.color = color;
+            this.weightRatio = 1.0;
+            this.turbo = false;
+        }
+        tick() {
+            var pad = userInput.readInput()[this.id];
+            if (pad.buttons[0].pressed) {
+                if (this.weightRatio > 0) this.weightRatio = this.weightRatio - 0.01;
+                this.turbo = (this.weightRatio > 0.3)
+            } else {
+                this.turbo = false;
+                if (this.weightRatio < 1.0) this.weightRatio = this.weightRatio + 0.005;
+            }
+            let density = (this.turbo) ? 30 : 0.0001;
+            for (var f = this.body.m_fixtureList; f; f = f.m_next) {
+                f.SetDensity(density);
+                this.body.ResetMassData()
+            }
+            applyPlayerForces(pad, this.body, this.turbo);
+        }
+        draw() {
+            context.fillStyle = (this.turbo) ? "red" : this.color;
+            const pos = convertToScreenCoordinates(this.body.GetPosition());
+            const size = this.weightRatio * 25;
+            context.fillRect(pos.x - size/2, pos.y - size/2, size, size);
+        }
+    }
+
+    function convertToScreenCoordinates(pos) {
+        return {
+            x: pos.x * 45,
+            y: pos.y * -45
+        }
+    }
+
+    function applyPlayerForces(pad, body, turbo) {
+        let multiplier = (turbo) ? 10 : 0.00001;
+        const desiredAngle = Math.atan2( pad.axes[2], pad.axes[3] ) - (Math.PI / 2);
+        body.SetAngle(desiredAngle);
+
+        body.ApplyImpulse(new b2Vec2(pad.axes[0] * multiplier,
+             pad.axes[1] * multiplier * -1),
+             body.GetWorldCenter());
+    }
+
+    function createAllGameObjects() {
+        for (var b = world.m_bodyList; b; b = b.m_next) {
+            if (b.name === "player1") {
+                gameObjects.push(new Player(world, b, 0, "blue"));
+            }
+            if (b.name === "player2") {
+                gameObjects.push(new Player(world, b, 1, "green"));
+            }
+        }
+    }
+
+    let world = null;
+    const gameObjects = [];
+    window.kurt = gameObjects
+    
     const delta = 1.0/144;
-
-    let testBody = null
 
     var canvas = document.getElementById('canvas');
     var context = canvas.getContext('2d');
@@ -38,25 +111,24 @@ define('game', [
 
     return {
         init: function() {
-            world = new Box2D.Dynamics.b2World(new Box2D.Common.Math.b2Vec2(0, -10), true);
+            world = new Box2D.Dynamics.b2World(new Box2D.Common.Math.b2Vec2(0, 0), true);
 
             world.SetDebugDraw(debugDraw);
             mapLoader.loadMap(world, map1);
 
+            createAllGameObjects();
         },
         tick: function() {
-            var pad = userInput.readInput();
 
-            if (pad && pad.buttons[4].pressed) {
-                for (var b = world.m_bodyList; b; b = b.m_next) {
-                    if (b.name === "body1") {
-                        b.ApplyImpulse(new b2Vec2(Math.cos(20 * (Math.PI / 180)) * 10,
-                                 Math.sin(20 * (Math.PI / 180)) * 10),
-                                 b.GetWorldCenter());
-                    }
-                }
-            }
+            _.each(gameObjects, function(gameObject) {
+                gameObject.tick();
+            });
+            
             world.Step(delta, 4, 4);
+
+            _.each(gameObjects, function(gameObject) {
+                gameObject.removeIfApplicable();
+            });
 
             context.fillStyle = "gray"
             context.fillRect(0, 0, 1024, 768)
@@ -65,6 +137,10 @@ define('game', [
             context.scale(1, -1);
             world.DrawDebugData();
             context.restore();
+
+            _.each(gameObjects, function(gameObject) {
+                gameObject.draw();
+            });
         }
     }
 });

@@ -8,7 +8,7 @@ define('userInput', [], function() {
 
     return {
         readInput: function() {
-            return navigator.getGamepads()[0];
+            return navigator.getGamepads();
         }
     }
 });
