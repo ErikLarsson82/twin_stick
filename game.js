@@ -1,13 +1,13 @@
 define('game', [
-    'Box2d', 
-    'underscore', 
-    'mapLoader', 
+    'Box2D',
+    'underscore',
+    'mapLoader',
     'userInput',
     'json!map1.json'
 ], function (
-    _box2d, 
-    _, 
-    mapLoader, 
+    _box2d,
+    _,
+    mapLoader,
     userInput,
     map1
 ) {
@@ -99,7 +99,7 @@ define('game', [
     let world = null;
     const gameObjects = [];
     window.kurt = gameObjects
-    
+
     const delta = 1.0/144;
 
     var canvas = document.getElementById('canvas');
@@ -135,7 +135,7 @@ define('game', [
             _.each(gameObjects, function(gameObject) {
                 gameObject.tick();
             });
-            
+
             world.Step(delta, 4, 4);
 
             _.each(gameObjects, function(gameObject) {
