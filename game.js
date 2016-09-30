@@ -11,6 +11,8 @@ define('game', [
     userInput,
     map1
 ) {
+    var DEBUG_WRITE_BUTTONS = false;
+
     class GameObject {
         constructor(world, body) {
             this.world = world;
@@ -24,6 +26,13 @@ define('game', [
         }
     }
 
+    function debugWriteButtons(pad) {
+        if (!DEBUG_WRITE_BUTTONS) return;
+        _.each(pad && pad.buttons, function(button, idx) {
+            if (button.pressed) console.log(idx + " pressed");
+        })
+    }
+
     class Player extends GameObject {
         constructor(world, body, id, color) {
             super(world, body);
@@ -34,7 +43,8 @@ define('game', [
         }
         tick() {
             var pad = userInput.readInput()[this.id];
-            if (pad.buttons[0].pressed) {
+            debugWriteButtons(pad);
+            if (pad && pad.buttons && pad.buttons[5] && pad.buttons[5].pressed) {
                 if (this.weightRatio > 0) this.weightRatio = this.weightRatio - 0.01;
                 this.turbo = (this.weightRatio > 0.3)
             } else {
@@ -64,6 +74,8 @@ define('game', [
     }
 
     function applyPlayerForces(pad, body, turbo) {
+        if (!(pad && pad.axes && pad.axes[2] && pad.axes[3])) return;
+
         let multiplier = (turbo) ? 10 : 0.00001;
         const desiredAngle = Math.atan2( pad.axes[2], pad.axes[3] ) - (Math.PI / 2);
         body.SetAngle(desiredAngle);
