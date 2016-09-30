@@ -12,6 +12,7 @@ define('game', [
     map1
 ) {
     var DEBUG_WRITE_BUTTONS = false;
+    var DEBUG_CONTROL_POINTS = false;
 
     class GameObject {
         constructor(world, body) {
@@ -38,31 +39,50 @@ define('game', [
             super(world, body);
             this.id = id;
             this.color = color;
-            this.weightRatio = 1.0;
-            this.turbo = false;
+            this.axes = [0,0];
+            this.rotationVector = [0,0];
         }
         tick() {
             var pad = userInput.readInput()[this.id];
             debugWriteButtons(pad);
+            
+            if (!(pad && pad.axes && pad.axes[2] && pad.axes[3])) return;
+
             if (pad && pad.buttons && pad.buttons[5] && pad.buttons[5].pressed) {
-                if (this.weightRatio > 0) this.weightRatio = this.weightRatio - 0.01;
-                this.turbo = (this.weightRatio > 0.3)
+                this.thrusting = true;
             } else {
-                this.turbo = false;
-                if (this.weightRatio < 1.0) this.weightRatio = this.weightRatio + 0.005;
+                this.thrusting = false;
             }
-            let density = (this.turbo) ? 30 : 0.0001;
-            for (var f = this.body.m_fixtureList; f; f = f.m_next) {
-                f.SetDensity(density);
-                this.body.ResetMassData()
+            const divider = 100;
+            const threshold = 0.5;
+            const thrust = 0.05;
+            this.axes[0] = pad.axes[2] * -1;
+            this.axes[1] = pad.axes[3] * -1;
+            this.rotationVector[0] = this.rotationVector[0] + (this.axes[0] - this.rotationVector[0]) / divider;
+            this.rotationVector[1] = this.rotationVector[1] + (this.axes[1] - this.rotationVector[1]) / divider;
+            const craftAngle = Math.atan2( this.rotationVector[0], this.rotationVector[1] )// - (Math.PI / 2);
+            this.body.SetAngle(craftAngle);
+            
+            const fixedVector = [Math.cos(craftAngle - (Math.PI / 2)), Math.sin(craftAngle + (Math.PI / 2))];
+            
+            if (this.thrusting) {
+                this.body.ApplyImpulse(new b2Vec2(fixedVector[0] * -thrust,
+                     fixedVector[1] * thrust),
+                     this.body.GetWorldCenter());
             }
-            applyPlayerForces(pad, this.body, this.turbo);
         }
         draw() {
-            context.fillStyle = (this.turbo) ? "red" : this.color;
+            context.fillStyle = this.color;
             const pos = convertToScreenCoordinates(this.body.GetPosition());
-            const size = this.weightRatio * 25;
-            context.fillRect(pos.x - size/2, pos.y - size/2, size, size);
+            const size = 17;
+            if (this.thrusting) {
+                context.fillRect(pos.x - size/2, pos.y - size/2, size, size);
+            }
+            if (!DEBUG_CONTROL_POINTS) return;
+            context.fillStyle = "red"
+            context.fillRect(pos.x + this.axes[0] * 30, pos.y + this.axes[1] * 30, 3, 3);
+            context.fillStyle = "green"
+            context.fillRect(pos.x + this.rotationVector[0] * 30, pos.y + this.rotationVector[1] * 30, 3, 3);
         }
     }
 
@@ -71,18 +91,6 @@ define('game', [
             x: pos.x * 45,
             y: pos.y * -45
         }
-    }
-
-    function applyPlayerForces(pad, body, turbo) {
-        if (!(pad && pad.axes && pad.axes[2] && pad.axes[3])) return;
-
-        let multiplier = (turbo) ? 10 : 0.00001;
-        const desiredAngle = Math.atan2( pad.axes[2], pad.axes[3] ) - (Math.PI / 2);
-        body.SetAngle(desiredAngle);
-
-        body.ApplyImpulse(new b2Vec2(pad.axes[0] * multiplier,
-             pad.axes[1] * multiplier * -1),
-             body.GetWorldCenter());
     }
 
     function createAllGameObjects() {
@@ -123,7 +131,7 @@ define('game', [
 
     return {
         init: function() {
-            world = new Box2D.Dynamics.b2World(new Box2D.Common.Math.b2Vec2(0, 0), true);
+            world = new Box2D.Dynamics.b2World(new Box2D.Common.Math.b2Vec2(0, -4), true);
 
             world.SetDebugDraw(debugDraw);
             mapLoader.loadMap(world, map1);
