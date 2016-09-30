@@ -1,18 +1,30 @@
 define('game', [
-    'Box2d', 
-    'underscore', 
-    'mapLoader', 
+    'Box2D',
+    'underscore',
+    'mapLoader',
     'userInput',
-    'json!map1.json'
+    'json!map1.json',
+    'json!ship1.json',
+    'json!ship2.json',
+    'json!ship1b.json',
 ], function (
-    _box2d, 
-    _, 
-    mapLoader, 
+    _box2d,
+    _,
+    mapLoader,
     userInput,
-    map1
+    map1,
+    ship1,
+    ship2,
+    ship1b
 ) {
-    var DEBUG_WRITE_BUTTONS = false;
+    // 144 and 1.0 or 60 and 2.4
+    const FPS = 60;
+    const impulseModifier = 2.4;
+
+
+    var DEBUG_WRITE_BUTTONS = true;
     var DEBUG_CONTROL_POINTS = false;
+    var switchIt = false;
 
     class GameObject {
         constructor(world, body) {
@@ -24,6 +36,10 @@ define('game', [
         draw() {}
         removeIfApplicable() {
             if (this.markedForRemoval) this.world.DestroyBody(this.body);
+            return this.markedForRemoval;
+        }
+        markForRemove() {
+            this.markedForRemoval = true;
         }
     }
 
@@ -45,8 +61,12 @@ define('game', [
         tick() {
             var pad = userInput.readInput()[this.id];
             debugWriteButtons(pad);
-            
+
             if (!(pad && pad.axes && pad.axes[2] && pad.axes[3])) return;
+
+            if (pad && pad.buttons && pad.buttons[4] && pad.buttons[4].pressed) {
+                switchIt = true;
+            }
 
             if (pad && pad.buttons && pad.buttons[5] && pad.buttons[5].pressed) {
                 this.thrusting = true;
@@ -62,12 +82,12 @@ define('game', [
             this.rotationVector[1] = this.rotationVector[1] + (this.axes[1] - this.rotationVector[1]) / divider;
             const craftAngle = Math.atan2( this.rotationVector[0], this.rotationVector[1] )// - (Math.PI / 2);
             this.body.SetAngle(craftAngle);
-            
+
             const fixedVector = [Math.cos(craftAngle - (Math.PI / 2)), Math.sin(craftAngle + (Math.PI / 2))];
-            
+
             if (this.thrusting) {
-                this.body.ApplyImpulse(new b2Vec2(fixedVector[0] * -thrust,
-                     fixedVector[1] * thrust),
+                this.body.ApplyImpulse(new b2Vec2(fixedVector[0] * -thrust * impulseModifier,
+                     fixedVector[1] * thrust * impulseModifier),
                      this.body.GetWorldCenter());
             }
         }
@@ -96,19 +116,33 @@ define('game', [
     function createAllGameObjects() {
         for (var b = world.m_bodyList; b; b = b.m_next) {
             if (b.name === "player1") {
-                gameObjects.push(new Player(world, b, 0, "blue"));
+                var player = new Player(world, b, 0, "blue");
+                b.gameObject = player;
+                gameObjects.push(player);
             }
             if (b.name === "player2") {
-                gameObjects.push(new Player(world, b, 1, "green"));
+                var player = new Player(world, b, 1, "green");
+                b.gameObject = player;
+                gameObjects.push(player);
             }
         }
     }
 
+    function findBodyByName(name) {
+        var body;
+        for (var b = world.m_bodyList; b; b = b.m_next) {
+            if (b.name === name) {
+                return b;
+            }
+        }
+        return false;
+    }
+    window.findBodyByName = findBodyByName;
+
     let world = null;
-    const gameObjects = [];
-    window.kurt = gameObjects
-    
-    const delta = 1.0/144;
+    let gameObjects = [];
+
+    const delta = 1.0/FPS;
 
     var canvas = document.getElementById('canvas');
     var context = canvas.getContext('2d');
@@ -134,7 +168,9 @@ define('game', [
             world = new Box2D.Dynamics.b2World(new Box2D.Common.Math.b2Vec2(0, -4), true);
 
             world.SetDebugDraw(debugDraw);
-            mapLoader.loadMap(world, map1);
+            mapLoader.loadJson(world, map1);
+            mapLoader.loadJson(world, ship1, findBodyByName('spawn1').GetPosition());
+            mapLoader.loadJson(world, ship2, findBodyByName('spawn2').GetPosition());
 
             createAllGameObjects();
         },
@@ -143,12 +179,20 @@ define('game', [
             _.each(gameObjects, function(gameObject) {
                 gameObject.tick();
             });
-            
+
             world.Step(delta, 4, 4);
 
-            _.each(gameObjects, function(gameObject) {
-                gameObject.removeIfApplicable();
+            if (switchIt) {
+                findBodyByName('player1') && findBodyByName('player1').gameObject.markForRemove();
+                switchIt = false;
+                mapLoader.loadJson(world, ship1b, findBodyByName('spawn1').GetPosition());
+                gameObjects = [];
+                createAllGameObjects();
+            }
+            gameObjects = _.filter(gameObjects, function(gameObject) {
+                return !gameObject.removeIfApplicable();
             });
+            window.go = gameObjects;
 
             context.fillStyle = "gray"
             context.fillRect(0, 0, 1024, 768)

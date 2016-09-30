@@ -2,7 +2,7 @@ define('mapLoader', [
   'Box2D',
   'underscore'
 ], function (_Box2D, _) {
-  
+
   // short hands
   var b2Vec2 = Box2D.Common.Math.b2Vec2;
   var b2PolygonShape = Box2D.Collision.Shapes.b2PolygonShape;
@@ -18,7 +18,8 @@ define('mapLoader', [
     // conventions:
     // body.name = 'startPos[playerIndex]'
     // body.name = 'endPos'
-    loadMap: function (world, map) {
+    loadJson: function (world, map, offset) {
+      var offset = offset || {x: 0, y: 0};
 
       var mapObjects = [];
       var data = map; //TODO
@@ -29,11 +30,12 @@ define('mapLoader', [
 
         var bodyData = data.body[i];
         bodyDef.type = bodyData.type; // 0 = static, 1 = kinematic, 2 = dynamic
-        bodyDef.position.x = bodyData.position.x;
-        bodyDef.position.y = bodyData.position.y;
+        if (bodyData.position === 0) bodyData.position = {x: 0, y: 0};
+        bodyDef.position.x = bodyData.position.x + offset.x;
+        bodyDef.position.y = bodyData.position.y + offset.y;
         bodyDef.angle = bodyData.angle;
         bodyDef.awake = bodyData.awake || false;
-        
+
         var body = world.CreateBody(bodyDef);
         body.SetUserData(bodyData.customProperties);
         body.name = bodyData.name;
@@ -63,7 +65,7 @@ define('mapLoader', [
             } else if (fixtureData.circle) {
 
               fixDef.shape = new b2CircleShape(fixtureData.circle.radius);
-              fixDef.shape.SetLocalPosition(new b2Vec2(fixtureData.circle.center.x, fixtureData.circle.center.y));
+              fixDef.shape.SetLocalPosition(new b2Vec2(fixtureData.circle.center.x + offset.x, fixtureData.circle.center.y + offset.y));
 
             }
 
