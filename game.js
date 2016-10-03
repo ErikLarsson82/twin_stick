@@ -5,8 +5,7 @@ define('game', [
     'userInput',
     'json!map1.json',
     'json!ship1.json',
-    'json!ship2.json',
-    'json!ship1b.json',
+    'json!ship2.json'
 ], function (
     _box2d,
     _,
@@ -14,12 +13,11 @@ define('game', [
     userInput,
     map1,
     ship1,
-    ship2,
-    ship1b
+    ship2
 ) {
     // 144 and 1.0 or 60 and 2.4
-    const FPS = 60;
-    const impulseModifier = 2.4;
+    const FPS = 144;
+    const impulseModifier = 1;
 
 
     var DEBUG_WRITE_BUTTONS = true;
@@ -65,7 +63,9 @@ define('game', [
             if (!(pad && pad.axes && pad.axes[2] && pad.axes[3])) return;
 
             if (pad && pad.buttons && pad.buttons[4] && pad.buttons[4].pressed) {
-                switchIt = true;
+                findBodyByName('player1') && findBodyByName('player1').gameObject.markForRemove();
+                spawnPlayer(0, ship2);
+                
             }
 
             if (pad && pad.buttons && pad.buttons[5] && pad.buttons[5].pressed) {
@@ -113,20 +113,22 @@ define('game', [
         }
     }
 
-    function createAllGameObjects() {
+    function createAllGameObjects(idx) {
         for (var b = world.m_bodyList; b; b = b.m_next) {
-            if (b.name === "player1") {
-                var player = new Player(world, b, 0, "blue");
-                b.gameObject = player;
-                gameObjects.push(player);
-            }
-            if (b.name === "player2") {
-                var player = new Player(world, b, 1, "green");
+            if (b.name === "ship1" || b.name === "ship2") {
+                b.name = "player1";
+                var player = new Player(world, b, idx, "blue");
                 b.gameObject = player;
                 gameObjects.push(player);
             }
         }
     }
+
+    function spawnPlayer(idx, ship) {
+        mapLoader.loadJson(world, ship, findBodyByName('spawn1').GetPosition());
+        createAllGameObjects(idx);
+    }
+
 
     function findBodyByName(name) {
         var body;
@@ -169,10 +171,8 @@ define('game', [
 
             world.SetDebugDraw(debugDraw);
             mapLoader.loadJson(world, map1);
-            mapLoader.loadJson(world, ship1, findBodyByName('spawn1').GetPosition());
-            mapLoader.loadJson(world, ship2, findBodyByName('spawn2').GetPosition());
-
-            createAllGameObjects();
+            
+            spawnPlayer(0, ship1);
         },
         tick: function() {
 
@@ -182,13 +182,6 @@ define('game', [
 
             world.Step(delta, 4, 4);
 
-            if (switchIt) {
-                findBodyByName('player1') && findBodyByName('player1').gameObject.markForRemove();
-                switchIt = false;
-                mapLoader.loadJson(world, ship1b, findBodyByName('spawn1').GetPosition());
-                gameObjects = [];
-                createAllGameObjects();
-            }
             gameObjects = _.filter(gameObjects, function(gameObject) {
                 return !gameObject.removeIfApplicable();
             });
