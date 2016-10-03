@@ -11,11 +11,20 @@ requirejs([
   'game'
 ], function (game) {
 
-    let running = true;
+    let running = false;
 
     window.addEventListener('keydown', function (e) {
-        if (e.keyCode === 80) {
-            running = !running;
+        switch(e.keyCode) {
+            case 80:
+                running = !running;
+            break;
+            case 84:
+                running = false;
+                game.tick();
+            break;
+            default:
+                console.log(e.keyCode);
+            break;
         }
     });
 

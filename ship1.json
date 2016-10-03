@@ -13,6 +13,50 @@
 			[
 				
 				{
+					"circle" : 
+					{
+						"center" : 
+						{
+							"x" : 0,
+							"y" : -1.329763412475586
+						},
+						"radius" : 0.1101905331015587
+					},
+					"density" : 3.0,
+					"friction" : 0.2000000029802322,
+					"name" : "tanker",
+					"sensor" : true
+				}
+			],
+			"linearVelocity" : 
+			{
+				"x" : 0,
+				"y" : 0
+			},
+			"massData-I" : 0.2030471861362457,
+			"massData-center" : 
+			{
+				"x" : 0,
+				"y" : -1.329763412475586
+			},
+			"massData-mass" : 0.1144352182745934,
+			"name" : "tankerPivot",
+			"position" : 
+			{
+				"x" : 0,
+				"y" : -0.2126965373754501
+			},
+			"type" : 2
+		},
+		
+		{
+			"angle" : 0,
+			"angularVelocity" : 0,
+			"awake" : true,
+			"fixture" : 
+			[
+				
+				{
 					"density" : 1,
 					"filter-categoryBits" : 3,
 					"filter-maskBits" : 65533,
@@ -197,6 +241,34 @@
 		"x" : 0,
 		"y" : -10.0
 	},
+	"joint" : 
+	[
+		
+		{
+			"anchorA" : 
+			{
+				"x" : 0,
+				"y" : -0.2126969993114471
+			},
+			"anchorB" : 
+			{
+				"x" : 0,
+				"y" : 0
+			},
+			"bodyA" : 1,
+			"bodyB" : 0,
+			"enableLimit" : false,
+			"enableMotor" : false,
+			"jointSpeed" : 0,
+			"lowerLimit" : 0,
+			"maxMotorTorque" : 0,
+			"motorSpeed" : 0,
+			"name" : "joint0",
+			"refAngle" : 0,
+			"type" : "revolute",
+			"upperLimit" : 0
+		}
+	],
 	"positionIterations" : 3,
 	"stepsPerSecond" : 60.0,
 	"subStepping" : false,

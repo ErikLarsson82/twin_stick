@@ -48,6 +48,8 @@ define('game', [
         })
     }
 
+    var did = false;
+
     class Player extends GameObject {
         constructor(world, body, id, color) {
             super(world, body);
@@ -58,13 +60,14 @@ define('game', [
         }
         tick() {
             var pad = userInput.readInput()[this.id];
+            console.log(pad);
             debugWriteButtons(pad);
 
             if (!(pad && pad.axes && pad.axes[2] && pad.axes[3])) return;
 
             if (pad && pad.buttons && pad.buttons[4] && pad.buttons[4].pressed) {
                 findBodyByName('player1') && findBodyByName('player1').gameObject.markForRemove();
-                spawnPlayer(0, ship2);
+                spawnPlayer(0, ship1);
                 
             }
 
@@ -80,10 +83,104 @@ define('game', [
             this.axes[1] = pad.axes[3] * -1;
             this.rotationVector[0] = this.rotationVector[0] + (this.axes[0] - this.rotationVector[0]) / divider;
             this.rotationVector[1] = this.rotationVector[1] + (this.axes[1] - this.rotationVector[1]) / divider;
-            const craftAngle = Math.atan2( this.rotationVector[0], this.rotationVector[1] )// - (Math.PI / 2);
-            this.body.SetAngle(craftAngle);
+            //const multiplier = Math.max(this.axes[0], this.axes[0] * -1) + Math.max(this.axes[1], this.axes[1] * -1); //multiplier = 0.1 //
+            const desiredAngle = Math.atan2( this.rotationVector[0], this.rotationVector[1] );// - (Math.PI / 2); ; //
+            console.log('currentVelocity: ', this.body.GetAngularVelocity())
+            console.log('desiredAngle: ', desiredAngle)
+            console.log('angle: ', this.body.GetAngle())
+            //const torque = Math.min(this.body.GetAngularVelocity(), -0.1);
+            /*if (this.body.GetAngularVelocity() === 0) {
+                console.log('torque')
+                this.body.ApplyTorque(-0.1);
+                
+            } else 
+            */
+            window.kurt = this.body;
+            if (this.body.GetAngularVelocity() < 0 && this.body.GetAngle() < desiredAngle) {
+                this.body.ApplyTorque(100);
+                console.log('applying positive force');
+            } else if (this.body.GetAngularVelocity() >= 0 && this.body.GetAngle() > desiredAngle) {
+                this.body.ApplyTorque(-100);
+                console.log('applying negative force');
+            } else {
+                console.log('biding time');
+                this.body.ApplyTorque(this.body.m_torque * -1);
+            }
+            /*float nextAngle = bodyAngle + body->GetAngularVelocity() / 60.0;
+            float totalRotation = desiredAngle - nextAngle;//use angle in next time step
+            body->ApplyTorque( totalRotation < 0 ? -10 : 10 );*/
+            /*const howMuchLeft = desiredAngle - this.body.GetAngle();
+            const torque = howMuchLeft - this.body.GetAngularVelocity();
+            console.log('howMuchLeft: ', howMuchLeft);
+            console.log('currentRotation: ', this.body.GetAngle())
+            console.log('currentVelocity: ', this.body.GetAngularVelocity())
+            console.log('torque: ', torque)
+            console.log('desiredAngle: ', desiredAngle)
 
-            const fixedVector = [Math.cos(craftAngle - (Math.PI / 2)), Math.sin(craftAngle + (Math.PI / 2))];
+            if (did) return;
+            if (this.body.GetAngularVelocity() < -0.14 || this.body.GetAngularVelocity() > 0.14){
+                console.log('throttling');
+                //this.body.ApplyTorque(3.1);
+                did = true;
+            } else {
+                console.log('running');
+                this.body.ApplyTorque(1.0);
+            }*/
+            
+            /*const nextAngle = this.body.GetAngle() + this.body.GetAngularVelocity();
+            //let totalRotation = 
+            let totalRotation = desiredAngle - nextAngle;
+            while ( totalRotation < -180 * (Math.PI/180) ) totalRotation += 360 * (Math.PI/180);
+            while ( totalRotation >  180 * (Math.PI/180) ) totalRotation -= 360 * (Math.PI/180);
+            const change = 0.1 * (Math.PI/180);
+            let desiredAngularVelocity = totalRotation;
+            //desiredAngularVelocity = Math.min( change, Math.max(-change, desiredAngularVelocity));
+            const impulse = desiredAngularVelocity; //this.body.GetInertia() * 
+            const torque = desiredAngularVelocity; // * Math.max(this.body.GetAngularVelocity(), this.body.GetAngularVelocity()*-1)
+            this.body.ApplyTorque(torque);
+            console.log('--------')
+            console.log('currentRotation: ', this.body.GetAngle())
+            console.log('currentVelocity: ', this.body.GetAngularVelocity())
+            console.log('nextAngle: ', nextAngle)
+            console.log('desiredAngle: ', desiredAngle)
+            console.log('inertia: ', this.body.GetInertia())
+            console.log('totalRotation: ', totalRotation)
+            console.log('desiredAngularVelocity: ', desiredAngularVelocity)
+            console.log('impusle: ', impulse)
+            console.log('torque: ', torque)*/
+
+
+            /*float nextAngle = bodyAngle + body->GetAngularVelocity() / 60.0;
+            float totalRotation = desiredAngle - nextAngle;
+            while ( totalRotation < -180 * DEGTORAD ) totalRotation += 360 * DEGTORAD;
+            while ( totalRotation >  180 * DEGTORAD ) totalRotation -= 360 * DEGTORAD;
+            float desiredAngularVelocity = totalRotation * 60;
+            float change = 1 * DEGTORAD; //allow 1 degree rotation per time step
+            desiredAngularVelocity = min( change, max(-change, desiredAngularVelocity));
+            float impulse = body->GetInertia() * desiredAngularVelocity;
+            body->ApplyAngularImpulse( impulse );*/
+            //console.log(desiredAngle, this.body.GetAngle())
+            //const multiplier = Math.max(this.axes[0], this.axes[0] * -1) + Math.max(this.axes[1], this.axes[1] * -1);
+            //console.log(this.axes[0], this.axes[0] * -1, Math.max(this.axes[0], this.axes[0] * -1))
+            //console.log()
+            /*console.log('--------')
+            console.log('Desired: ' + desiredAngle)
+            console.log('Angle: ' + this.body.GetAngle())
+            console.log('Velocity: ' + this.body.GetAngularVelocity())
+            if (this.body.GetAngle() % Math.PI * 2 < desiredAngle) {
+                if (this.body.GetAngularVelocity() > 2) return;
+                this.body.ApplyTorque(0.001 * multiplier);
+                console.log('apply plus', multiplier)
+            } else {
+                if (this.body.GetAngularVelocity() < -2) return;
+                this.body.ApplyTorque(-0.001 * multiplier);
+                console.log('apply minus', multiplier)
+            }*/
+            //this.body.ApplyTorque(-0.1);
+            //this.body.SetAngle(craftAngle);
+
+            const currentAngle = this.body.GetAngle();
+            const fixedVector = [Math.cos(currentAngle - (Math.PI / 2)), Math.sin(currentAngle + (Math.PI / 2))];
 
             if (this.thrusting) {
                 this.body.ApplyImpulse(new b2Vec2(fixedVector[0] * -thrust * impulseModifier,
@@ -115,11 +212,19 @@ define('game', [
 
     function createAllGameObjects(idx) {
         for (var b = world.m_bodyList; b; b = b.m_next) {
-            if (b.name === "ship1" || b.name === "ship2") {
+            if (b.name === "ship1") {
                 b.name = "player1";
                 var player = new Player(world, b, idx, "blue");
                 b.gameObject = player;
                 gameObjects.push(player);
+
+                /*customCollisions.push({
+                  obj1: player,
+                  obj2: obj2,
+                  //callback: callback,
+                  collisionTick: 
+                  //endCallback: endCallback
+                });*/
             }
         }
     }
@@ -165,22 +270,54 @@ define('game', [
     debugDraw.SetLineThickness(1.0);
     debugDraw.SetFlags(Box2D.Dynamics.b2DebugDraw.e_shapeBit | Box2D.Dynamics.b2DebugDraw.e_jointBit);
 
+    /*var customCollisions = [];
+
+    function BeginContact = function(contact) {
+        var contactGameObject1 = contact.m_fixtureA.GetBody().gameObject;
+        var contactGameObject2 = contact.m_fixtureB.GetBody().gameObject;
+        _.each(customCollisions, function(element) {
+          var condition1 = element.obj1 === contactGameObject1.name && (element.obj2 === contactGameObject2.name || element.obj2 === null);
+          var condition2 = element.obj1 === contactGameObject2.name && (element.obj2 === contactGameObject1.name || element.obj2 === null);
+          if (condition1 || condition2) {
+            element.callback();
+          }
+        });
+    };
+
+    function EndContact = function(contact) {
+        var contactGameObject1 = contact.m_fixtureA.GetBody().gameObject;
+        var contactGameObject2 = contact.m_fixtureB.GetBody().gameObject;
+        _.each(customCollisions, function(element) {
+          var condition1 = element.obj1 === contactGameObject1.name && (element.obj2 === contactGameObject2.name || element.obj2 === null);
+          var condition2 = element.obj1 === contactGameObject2.name && (element.obj2 === contactGameObject1.name || element.obj2 === null);
+          if ((condition1 || condition2) && element.endCallback) {
+            element.endCallback();
+          }
+        });
+    };*/
+
     return {
         init: function() {
-            world = new Box2D.Dynamics.b2World(new Box2D.Common.Math.b2Vec2(0, -4), true);
+            world = new Box2D.Dynamics.b2World(new Box2D.Common.Math.b2Vec2(0, 0), true);
+
+            /*var contactListener = new Box2D.Dynamics.b2ContactListener();
+            contactListener.BeginContact = BeginContact;
+            contactListener.EndContact = EndContact;*/
 
             world.SetDebugDraw(debugDraw);
             mapLoader.loadJson(world, map1);
+
+            //createAllGameObjects(0);
             
             spawnPlayer(0, ship1);
         },
         tick: function() {
-
             _.each(gameObjects, function(gameObject) {
                 gameObject.tick();
             });
 
             world.Step(delta, 4, 4);
+            window.world = world;
 
             gameObjects = _.filter(gameObjects, function(gameObject) {
                 return !gameObject.removeIfApplicable();

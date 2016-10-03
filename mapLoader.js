@@ -65,7 +65,7 @@ define('mapLoader', [
             } else if (fixtureData.circle) {
 
               fixDef.shape = new b2CircleShape(fixtureData.circle.radius);
-              fixDef.shape.SetLocalPosition(new b2Vec2(fixtureData.circle.center.x + offset.x, fixtureData.circle.center.y + offset.y));
+              fixDef.shape.SetLocalPosition(new b2Vec2(fixtureData.circle.center.x, fixtureData.circle.center.y));
 
             }
 
@@ -92,7 +92,10 @@ define('mapLoader', [
 
           var jointDef = new b2RevoluteJointDef();
 
-          jointDef.Initialize(bodyA, bodyB, bodyA.GetPosition());
+          var pos = bodyA.GetPosition();
+          pos.x = pos.x + offset.x;
+          pos.y = pos.y + offset.y;
+          jointDef.Initialize(bodyA, bodyB, pos);
 
           jointDef.enableLimit = jointData.enableLimit;
           jointDef.lowerAngle = jointData.lowerLimit;
