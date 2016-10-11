@@ -11,6 +11,15 @@ define('game', [
     userInput,
     map1
 ) {
+    // 144 and 1.0 or 60 and 2.4
+    const FPS = 60;
+    const impulseModifier = 2.4;
+
+    let world = null;
+    const gameObjects = [];
+
+    const delta = 1.0/144;
+
     var DEBUG_WRITE_BUTTONS = false;
 
     class GameObject {
@@ -76,12 +85,9 @@ define('game', [
     function applyPlayerForces(pad, body, turbo) {
         if (!(pad && pad.axes && pad.axes[2] && pad.axes[3])) return;
 
-        let multiplier = (turbo) ? 10 : 0.00001;
-        const desiredAngle = Math.atan2( pad.axes[2], pad.axes[3] ) - (Math.PI / 2);
-        body.SetAngle(desiredAngle);
-
-        body.ApplyImpulse(new b2Vec2(pad.axes[0] * multiplier,
-             pad.axes[1] * multiplier * -1),
+        const thrust = 0.00003;
+        body.ApplyImpulse(new b2Vec2(pad.axes[0] * thrust * impulseModifier,
+             pad.axes[1] * thrust * -1 * impulseModifier),
              body.GetWorldCenter());
     }
 
@@ -95,12 +101,6 @@ define('game', [
             }
         }
     }
-
-    let world = null;
-    const gameObjects = [];
-    window.kurt = gameObjects
-
-    const delta = 1.0/144;
 
     var canvas = document.getElementById('canvas');
     var context = canvas.getContext('2d');
