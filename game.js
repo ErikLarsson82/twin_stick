@@ -100,21 +100,25 @@ define('game', [
                 player1 = new Player(world, b, 0, "blue");
                 gameObjects.push(player1);
                 b.gameObject = player1;
+                player1.name = "player1";
             }
             if (b.name === "player2") {
                 player2 = new Player(world, b, 1, "green");
                 gameObjects.push(player2);
                 b.gameObject = player2;
+                player2.name = "player2";
             }
             if (b.name === "powerup") {
                 powerup = new GameObject(world, b);
                 gameObjects.push(powerup);
                 b.gameObject = powerup;
+                powerup.name = "powerup";
             }
             if (b.name === "debree") {
                 debree = new GameObject(world, b);
                 gameObjects.push(debree);
                 b.gameObject = debree;
+                debree.name = "debree";
             }
         }
     }
@@ -154,10 +158,10 @@ define('game', [
     contactListener.BeginContact = function(contact) {
         function exists() {
             return _.find(contacts, function(contactPair) {
-                return !((contact.m_fixtureA.GetBody() === contactPair.a &&
+                return (contact.m_fixtureA.GetBody() === contactPair.a &&
                     contact.m_fixtureB.GetBody() === contactPair.b) ||
                     (contact.m_fixtureA.GetBody() === contactPair.b &&
-                    contact.m_fixtureB.GetBody() === contactPair.a));
+                    contact.m_fixtureB.GetBody() === contactPair.a);
             })
         }
         if (!exists()) {

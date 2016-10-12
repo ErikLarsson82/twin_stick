@@ -289,7 +289,8 @@
 					},
 					"density" : 1,
 					"friction" : 0.2,
-					"name" : "circle"
+					"name" : "circle",
+					"restitution" : 0.2
 				}
 			],
 			"linearVelocity" : 0,
@@ -319,7 +320,8 @@
 					},
 					"density" : 1,
 					"friction" : 0.2,
-					"name" : "circle"
+					"name" : "circle",
+					"restitution" : 0.2
 				}
 			],
 			"linearVelocity" : 0,
