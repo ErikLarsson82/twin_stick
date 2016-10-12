@@ -17,10 +17,13 @@ define('game', [
 
     let world = null;
     const gameObjects = [];
+    window.gameObjects = gameObjects;
 
-    const delta = 1.0/144;
+    const delta = 1.0/FPS;
 
     var DEBUG_WRITE_BUTTONS = false;
+
+    var player1, player2, powerup, debree;
 
     class GameObject {
         constructor(world, body) {
@@ -47,30 +50,30 @@ define('game', [
             super(world, body);
             this.id = id;
             this.color = color;
-            this.weightRatio = 1.0;
-            this.turbo = false;
+            this.power = 0;
         }
         tick() {
             var pad = userInput.readInput()[this.id];
             debugWriteButtons(pad);
-            if (pad && pad.buttons && pad.buttons[5] && pad.buttons[5].pressed) {
-                if (this.weightRatio > 0) this.weightRatio = this.weightRatio - 0.01;
-                this.turbo = (this.weightRatio > 0.3)
-            } else {
-                this.turbo = false;
-                if (this.weightRatio < 1.0) this.weightRatio = this.weightRatio + 0.005;
+            applyPlayerForces(pad, this.body);
+
+            var players = [
+                player1,
+                player2
+            ]
+            if (determineContact(players[this.id], powerup)) {
+                this.power += 0.3;
             }
-            let density = (this.turbo) ? 30 : 0.0001;
-            for (var f = this.body.m_fixtureList; f; f = f.m_next) {
-                f.SetDensity(density);
-                this.body.ResetMassData()
+            if (determineContact(players[this.id], debree) && this.power >= 25) {
+                debree.markedForRemoval = true;
+                this.power = 0;
             }
-            applyPlayerForces(pad, this.body, this.turbo);
+            this.power = Math.min(25, Math.max(this.power, 0))
         }
         draw() {
-            context.fillStyle = (this.turbo) ? "red" : this.color;
+            context.fillStyle = this.color;
             const pos = convertToScreenCoordinates(this.body.GetPosition());
-            const size = this.weightRatio * 25;
+            const size = this.power;
             context.fillRect(pos.x - size/2, pos.y - size/2, size, size);
         }
     }
@@ -82,10 +85,10 @@ define('game', [
         }
     }
 
-    function applyPlayerForces(pad, body, turbo) {
+    function applyPlayerForces(pad, body) {
         if (!(pad && pad.axes && pad.axes[2] && pad.axes[3])) return;
 
-        const thrust = 0.00003;
+        const thrust = 0.02;
         body.ApplyImpulse(new b2Vec2(pad.axes[0] * thrust * impulseModifier,
              pad.axes[1] * thrust * -1 * impulseModifier),
              body.GetWorldCenter());
@@ -94,13 +97,37 @@ define('game', [
     function createAllGameObjects() {
         for (var b = world.m_bodyList; b; b = b.m_next) {
             if (b.name === "player1") {
-                gameObjects.push(new Player(world, b, 0, "blue"));
+                player1 = new Player(world, b, 0, "blue");
+                gameObjects.push(player1);
+                b.gameObject = player1;
             }
             if (b.name === "player2") {
-                gameObjects.push(new Player(world, b, 1, "green"));
+                player2 = new Player(world, b, 1, "green");
+                gameObjects.push(player2);
+                b.gameObject = player2;
+            }
+            if (b.name === "powerup") {
+                powerup = new GameObject(world, b);
+                gameObjects.push(powerup);
+                b.gameObject = powerup;
+            }
+            if (b.name === "debree") {
+                debree = new GameObject(world, b);
+                gameObjects.push(debree);
+                b.gameObject = debree;
             }
         }
     }
+
+    function determineContact(gameObject1, gameObject2) {
+        return _.find(contacts, function(contactPair) {
+            return (contactPair.a.gameObject === gameObject1 &&
+                contactPair.b.gameObject === gameObject2) ||
+                (contactPair.a.gameObject === gameObject2 &&
+                contactPair.b.gameObject === gameObject1);
+        });
+    }
+    window.determineContact = determineContact;
 
     var canvas = document.getElementById('canvas');
     var context = canvas.getContext('2d');
@@ -121,11 +148,40 @@ define('game', [
     debugDraw.SetLineThickness(1.0);
     debugDraw.SetFlags(Box2D.Dynamics.b2DebugDraw.e_shapeBit | Box2D.Dynamics.b2DebugDraw.e_jointBit);
 
+    var contactListener = new Box2D.Dynamics.b2ContactListener();
+    var contacts = [];
+    window.contacts = contacts;
+    contactListener.BeginContact = function(contact) {
+        function exists() {
+            return _.find(contacts, function(contactPair) {
+                return !((contact.m_fixtureA.GetBody() === contactPair.a &&
+                    contact.m_fixtureB.GetBody() === contactPair.b) ||
+                    (contact.m_fixtureA.GetBody() === contactPair.b &&
+                    contact.m_fixtureB.GetBody() === contactPair.a));
+            })
+        }
+        if (!exists()) {
+            contacts.push({
+                a: contact.m_fixtureA.GetBody(),
+                b: contact.m_fixtureB.GetBody()
+            });
+        }
+    };
+
+    contactListener.EndContact = function(contact) {
+        contacts = _.filter(contacts, function(contactPair) {
+            return !(contact.m_fixtureA.GetBody() === contactPair.a &&
+                    contact.m_fixtureB.GetBody() === contactPair.b);
+        })
+        window.contacts = contacts;
+    };
+
     return {
         init: function() {
             world = new Box2D.Dynamics.b2World(new Box2D.Common.Math.b2Vec2(0, 0), true);
-
             world.SetDebugDraw(debugDraw);
+            world.SetContactListener(contactListener);
+
             mapLoader.loadMap(world, map1);
 
             createAllGameObjects();

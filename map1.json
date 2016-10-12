@@ -13,7 +13,53 @@
 			[
 				
 				{
-					"density" : 2,
+					"density" : 1,
+					"friction" : 0.2,
+					"name" : "fixture2",
+					"polygon" : 
+					{
+						"vertices" : 
+						{
+							"x" : 
+							[
+								0.6778755187988281,
+								0.6778755187988281,
+								-0.6778755187988281,
+								-0.6778755187988281
+							],
+							"y" : 
+							[
+								-0.6778755187988281,
+								0.6778755187988281,
+								0.6778755187988281,
+								-0.6778755187988281
+							]
+						}
+					},
+					"sensor" : true
+				}
+			],
+			"linearVelocity" : 0,
+			"massData-I" : 0.5630779862403870,
+			"massData-mass" : 1.838060855865479,
+			"name" : "powerup",
+			"position" : 
+			{
+				"x" : 11.07304954528809,
+				"y" : -11.43464660644531
+			},
+			"type" : 2
+		},
+		
+		{
+			"angle" : 0,
+			"angularVelocity" : 0,
+			"awake" : true,
+			"fixture" : 
+			[
+				
+				{
+					"density" : 0.1,
 					"friction" : 0.2,
 					"name" : "fixture1",
 					"polygon" : 
@@ -40,13 +86,13 @@
 				}
 			],
 			"linearVelocity" : 0,
-			"massData-I" : 22.17426109313965,
+			"massData-I" : 1.108713030815125,
 			"massData-center" : 
 			{
-				"x" : -7.152556804612686e-07,
-				"y" : -2.384185791015625e-07
+				"x" : -7.152557373046875e-07,
+				"y" : -2.384185648907078e-07
 			},
-			"massData-mass" : 16.31229972839355,
+			"massData-mass" : 0.8156149983406067,
 			"name" : "debree",
 			"position" : 
 			{
